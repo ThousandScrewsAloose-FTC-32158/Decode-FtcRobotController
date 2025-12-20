@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
 
-@Autonomous(name = "Red Auto Right Top", group = "Auto")
-public class RedAutotop extends LinearOpMode {
+@Autonomous(name = "Blue Auto Left Top", group = "Auto")
+public class BlueAutotop extends LinearOpMode {
 
     private DcMotor leftFront;
     private DcMotor rightFront;
@@ -43,7 +43,7 @@ public class RedAutotop extends LinearOpMode {
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        telemetry.addLine("Red Auto Backward Right READY");
+        telemetry.addLine("Blue Auto Backward Left READY");
         telemetry.update();
 
         waitForStart();
@@ -58,9 +58,8 @@ public class RedAutotop extends LinearOpMode {
         // ---- AUTO ----
         driveBackward(-30, 0.6);
         shootThreeTimes();
-        turnRight(-60, 0.6);
+        turnLeft(-60, 0.6);
         driveBackward(20, 0.6);
-
 
         telemetry.addLine("AUTO DONE");
         telemetry.update();
@@ -90,12 +89,12 @@ public class RedAutotop extends LinearOpMode {
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    private void turnRight(double degrees, double power) {
+    private void turnLeft(double degrees, double power) {
         double INCHES_PER_DEGREE = 0.10;
         double inches = degrees * INCHES_PER_DEGREE;
 
-        int leftTarget = leftFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
-        int rightTarget = rightFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int leftTarget = leftFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int rightTarget = rightFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
 
         leftFront.setTargetPosition(leftTarget);
         rightFront.setTargetPosition(rightTarget);
@@ -107,7 +106,7 @@ public class RedAutotop extends LinearOpMode {
         rightFront.setPower(power);
 
         while (opModeIsActive() && leftFront.isBusy()) {
-            telemetry.addData("Turning RIGHT", "%.1f°", degrees);
+            telemetry.addData("Turning LEFT", "%.1f°", degrees);
             telemetry.update();
         }
 

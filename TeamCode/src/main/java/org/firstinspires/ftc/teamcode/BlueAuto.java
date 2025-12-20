@@ -49,17 +49,19 @@ public class BlueAuto extends LinearOpMode {
         waitForStart();
 
         // Shooter on first
-        shooterMotor.setPower(0.8);
+        shooterMotor.setPower(0.65);
         sleep(700);
 
         leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // ---- AUTO ----
-        driveBackward(48, 0.6);
-        turnLeft(45, 0.5);
-        driveBackward(68.4, 0.6);
+        driveBackward(60, 0.6);
+        turnLeft(70, 0.5);
+        driveBackward(40.4, 0.6);
         shootThreeTimes();
+        turnLeft(-60, 0.5);
+        driveBackward(-30, 0.6);
 
         telemetry.addLine("AUTO DONE");
         telemetry.update();
@@ -117,7 +119,7 @@ public class BlueAuto extends LinearOpMode {
     }
 
     private void shootThreeTimes() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             clockwiseServo.setPower(-1.0);
             counterClockwiseServo.setPower(1.0);
             sleep(FIRE_TIME);

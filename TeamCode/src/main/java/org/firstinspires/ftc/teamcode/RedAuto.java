@@ -56,10 +56,11 @@ public class RedAuto extends LinearOpMode {
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // ---- AUTO ----
-        driveBackward(48, 0.6);
-        turnRight(50, 0.5);
-        driveBackward(68.4, 0.6);
+        driveBackward(70, 0.6);
+        turnRight(65, 0.5);
+        driveBackward(40.4, 0.6);
         shootThreeTimes();
+        turnRight(-60, 0.5);
         driveBackward(-30, 0.6);
 
         telemetry.addLine("AUTO DONE");
