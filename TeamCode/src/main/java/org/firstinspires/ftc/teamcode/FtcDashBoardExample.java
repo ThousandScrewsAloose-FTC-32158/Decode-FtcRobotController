@@ -56,6 +56,7 @@ public class FtcDashBoardExample extends LinearOpMode
     public static double MOTOR_POWER = 1;
 
     //This class is used to implement webcam streaming on the dashboard.
+    //It's not required, but could be useful when developing camera features.
     public static class CameraStreamProcessor implements VisionProcessor, CameraStreamSource
     {
         private final AtomicReference<Bitmap> lastFrame =
@@ -115,6 +116,8 @@ public class FtcDashBoardExample extends LinearOpMode
             //Print a line of telemetry showing the current motor power.
             //From the dashboard web page try changing the MOTOR_POWER config var
             //and see how it updates in the telemetry section.
+            //Dashboard web page is at: http://192.168.43.1:8080/dash
+            //Make sure your computer is on the robot's wifi.
             telemetry.addLine(String.format(Locale.US, "MOTOR_POWER: %f", MOTOR_POWER));
             telemetry.update();
             sleep(100L);
