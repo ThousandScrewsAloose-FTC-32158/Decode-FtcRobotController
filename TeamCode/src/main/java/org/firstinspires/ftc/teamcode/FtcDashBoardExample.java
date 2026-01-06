@@ -29,7 +29,13 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
  * Telemetry
  * Configuration Variables
  *
- * Pull in FTC Dashboard code by adding the following to
+ * Pull in FTC Dashboard code by adding the following to build.gradle:
+ *
+ * In the repositories section add:
+ *  maven { url = 'https://maven.brott.dev/' }
+ *
+ * In the dependencies section add:
+ *  implementation 'com.acmerobotics.dashboard:dashboard:0.5.1'
  *
  * Activate the FTC Dashboard by browsing to http://192.168.43.1:8080/dash
  *
