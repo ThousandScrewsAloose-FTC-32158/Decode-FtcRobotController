@@ -29,11 +29,17 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+
+import java.util.Locale;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -64,22 +70,25 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  */
 
 @TeleOp(name="Basic: Kevin Omni Linear OpMode", group="Linear OpMode")
-@Disabled
-public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
+// @Disabled
+@Config //Enables FTC Dashboard configuration variables.
+public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor frontLeftDrive = null;
+    private DcMotorEx frontLeftDrive = null;
     private DcMotor backLeftDrive = null;
     private DcMotor frontRightDrive = null;
     private DcMotor backRightDrive = null;
+
+    public static double MOTOR_POWER_SCALE = 1;
 
     @Override
     public void runOpMode() {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+        frontLeftDrive = hardwareMap.get(DcMotorEx.class, "front_left_drive");
         backLeftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
         frontRightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backRightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
@@ -105,6 +114,8 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
 
         waitForStart();
         runtime.reset();
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
@@ -135,6 +146,11 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
                 backRightPower  /= max;
             }
 
+            frontLeftPower *= MOTOR_POWER_SCALE;
+            frontRightPower *= MOTOR_POWER_SCALE;
+            backLeftPower *= MOTOR_POWER_SCALE;
+            backRightPower *= MOTOR_POWER_SCALE;
+
             // This is test code:
             //
             // Uncomment the following code to test your motor directions.
@@ -162,6 +178,7 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", frontLeftPower, frontRightPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", backLeftPower, backRightPower);
+            telemetry.addLine(String.format(Locale.US, "MOTOR_POWER_SCALE: %f", MOTOR_POWER_SCALE));
             telemetry.update();
         }
     }}
