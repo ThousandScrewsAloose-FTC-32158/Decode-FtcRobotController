@@ -88,11 +88,11 @@ public class MainDrive extends LinearOpMode {
         while (opModeIsActive()) {
 
             // ============================
-            // MECANUM DRIVE
+            // MECANUM DRIVE (JOYSTICKS SWAPPED)
             // ============================
-            double y  = -gamepad1.left_stick_y;   // Forward/back
-            double x  = gamepad1.left_stick_x;    // Strafe
-            double rx = gamepad1.right_stick_x;   // Rotate
+            double y  = -gamepad1.right_stick_y; // Forward/back
+            double x  =  gamepad1.right_stick_x; // Strafe
+            double rx =  gamepad1.left_stick_x;  // Rotate
 
             // Deadzones
             if (Math.abs(y) < 0.05) y = 0;
@@ -101,8 +101,8 @@ public class MainDrive extends LinearOpMode {
 
             // Slow mode
             double speedScale = gamepad1.left_bumper ? 0.40 : 1.0;
-            y *= speedScale;
-            x *= speedScale;
+            y  *= speedScale;
+            x  *= speedScale;
             rx *= speedScale;
 
             // Mecanum math
