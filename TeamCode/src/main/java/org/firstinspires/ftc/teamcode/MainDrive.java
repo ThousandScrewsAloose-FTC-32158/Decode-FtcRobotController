@@ -88,11 +88,11 @@ public class MainDrive extends LinearOpMode {
         while (opModeIsActive()) {
 
             // ============================
-            // MECANUM DRIVE (CORRECT MAPPING)
+            // MECANUM DRIVE
             // ============================
-            double y  = -gamepad1.left_stick_y;   // Forward / Back
-            double x  =  gamepad1.left_stick_x;   // Strafe
-            double rx =  gamepad1.right_stick_x;  // Turn ONLY
+            double y  = -gamepad1.right_stick_y; // Forward/back
+            double x  =  gamepad1.right_stick_x; // Strafe
+            double rx =  gamepad1.left_stick_x;  // Rotate
 
             // Deadzones
             if (Math.abs(y) < 0.05) y = 0;
