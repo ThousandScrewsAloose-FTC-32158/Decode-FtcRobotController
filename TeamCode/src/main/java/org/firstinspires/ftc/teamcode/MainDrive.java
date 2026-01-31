@@ -4,8 +4,18 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
+// Activate the FTC Dashboard by browsing to http://192.168.43.1:8080/dash
 
 @TeleOp(name = "Main Drive", group = "Drive")
+@Config //Enables FTC Dashboard configuration variables.
 public class MainDrive extends LinearOpMode {
 
     // ============================
@@ -19,12 +29,12 @@ public class MainDrive extends LinearOpMode {
     // ============================
     // Launcher / Shooter
     // ============================
-    private DcMotor clockwiseMotor;
+    private DcMotorEx clockwiseMotor;
     private CRServo clockwiseServo;
     private CRServo counterClockwiseServo;
 
     // Max drive speed
-    private static final double MAX_SPEED = 0.7;
+    public static final double MAX_SPEED = 0.7;
 
     // ============================
     // Launcher Toggle
@@ -39,8 +49,10 @@ public class MainDrive extends LinearOpMode {
     ShootState shootState = ShootState.IDLE;
     double stateStartTime = 0;
 
-    final double FIRE_TIME = 0.25;
-    final double COOLDOWN = 2.2;
+    public static double FIRE_TIME = 0.25;
+    public static double COOLDOWN = 2.2;
+
+    public static double FLYWHEEL_TICKS_PER_SECOND = 512;
 
     @Override
     public void runOpMode() {
@@ -53,7 +65,7 @@ public class MainDrive extends LinearOpMode {
         leftRear   = hardwareMap.get(DcMotor.class, "leftRear");
         rightRear  = hardwareMap.get(DcMotor.class, "rightRear");
 
-        clockwiseMotor = hardwareMap.get(DcMotor.class, "clockwiseMotor");
+        clockwiseMotor = hardwareMap.get(DcMotorEx.class, "clockwiseMotor");
         clockwiseServo = hardwareMap.get(CRServo.class, "clockwiseServo");
         counterClockwiseServo = hardwareMap.get(CRServo.class, "counterClockwiseServo");
 
@@ -76,6 +88,10 @@ public class MainDrive extends LinearOpMode {
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         clockwiseMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        clockwiseMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        clockwiseMotor.setVelocityPIDFCoefficients(5,0,1,15);
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -145,7 +161,7 @@ public class MainDrive extends LinearOpMode {
             if (reversePressed) {
                 clockwiseMotor.setPower(-0.2);
             } else {
-                clockwiseMotor.setPower(launcherOn ? 0.65 : 0.0);
+                clockwiseMotor.setVelocity(launcherOn ? FLYWHEEL_TICKS_PER_SECOND : 0);//.setPower(launcherOn ? 0.65 : 0.0);
             }
 
             // ============================
@@ -191,6 +207,8 @@ public class MainDrive extends LinearOpMode {
             telemetry.addData("Launcher", reversePressed ? "REVERSING" : (launcherOn ? "ON" : "OFF"));
             telemetry.addData("Slow Mode", speedScale == 0.4 ? "ON" : "OFF");
             telemetry.addData("Shooter State", shootState);
+            telemetry.addData("Target FW TPS: ", FLYWHEEL_TICKS_PER_SECOND);
+            telemetry.addData("Actual FW TPS: ", clockwiseMotor.getVelocity());
             telemetry.update();
         }
     }
