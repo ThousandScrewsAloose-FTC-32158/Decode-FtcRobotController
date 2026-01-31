@@ -90,9 +90,9 @@ public class MainDrive extends LinearOpMode {
             // ============================
             // MECANUM DRIVE
             // ============================
-            double y  = -gamepad1.right_stick_y; // Forward/back
-            double x  =  gamepad1.right_stick_x; // Strafe
-            double rx =  gamepad1.left_stick_x;  // Rotate
+            double y  = gamepad1.left_stick_y; // Forward/back
+            double x  = -gamepad1.left_stick_x; // Strafe
+            double rx = -gamepad1.right_stick_x;  // Rotate
 
             // Deadzones
             if (Math.abs(y) < 0.05) y = 0;
