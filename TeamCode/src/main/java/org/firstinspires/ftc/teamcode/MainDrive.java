@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-
+// Activate the FTC Dashboard by browsing to http://192.168.43.1:8080/dash
 @TeleOp(name = "Main Drive", group = "Drive")
 @Config
 public class MainDrive extends LinearOpMode {
@@ -48,7 +48,7 @@ public class MainDrive extends LinearOpMode {
     public static double FIRE_TIME = 0.25;
     public static double COOLDOWN = 2.2;
 
-    public static double FLYWHEEL_TICKS_PER_SECOND = 537.6;
+    public static double FLYWHEEL_TICKS_PER_SECOND = 1050;
 
     @Override
     public void runOpMode() {
