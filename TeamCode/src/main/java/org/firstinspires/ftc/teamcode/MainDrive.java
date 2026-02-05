@@ -52,7 +52,7 @@ public class MainDrive extends LinearOpMode {
     public static double FIRE_TIME = 0.25;
     public static double COOLDOWN = 2.2;
 
-    public static double FLYWHEEL_TICKS_PER_SECOND = 512;
+    public static double FLYWHEEL_TICKS_PER_SECOND = 537.6;
 
     @Override
     public void runOpMode() {
@@ -151,14 +151,29 @@ public class MainDrive extends LinearOpMode {
             // ============================
             boolean triggerPressed = gamepad1.right_trigger > 0.1;
 
-            if (triggerPressed && !triggerPreviouslyPressed) {
-                launcherOn = !launcherOn;
-            }
-            triggerPreviouslyPressed = triggerPressed;
+            if (triggerPressed)
+                launcherOn = true;
+            else
+                launcherOn = false;
 
+//            if (triggerPressed && !triggerPreviouslyPressed) {
+//                launcherOn = !launcherOn;
+//            }
+//            triggerPreviouslyPressed = triggerPressed;
+
+            int flywheelOn = 0;
             boolean reversePressed = gamepad1.right_bumper;
+            while (reversePressed) {
+                if (flywheelOn==0) {
+                    flywheelOn = 1;
+                }
+                else if (flywheelOn==1) {
+                    flywheelOn = 0;
+                    }
 
-            if (reversePressed) {
+            }
+
+            if (flywheelOn==1) {
                 clockwiseMotor.setPower(-0.2);
             } else {
                 clockwiseMotor.setVelocity(launcherOn ? FLYWHEEL_TICKS_PER_SECOND : 0);//.setPower(launcherOn ? 0.65 : 0.0);
@@ -208,7 +223,7 @@ public class MainDrive extends LinearOpMode {
             telemetry.addData("Slow Mode", speedScale == 0.4 ? "ON" : "OFF");
             telemetry.addData("Shooter State", shootState);
             telemetry.addData("Target FW TPS: ", FLYWHEEL_TICKS_PER_SECOND);
-            telemetry.addData("Actual FW TPS: ", clockwiseMotor.getVelocity());
+            telemetry.addData("Actual FW TPS: ", (512.0/1200.0) * clockwiseMotor.getVelocity());
             telemetry.update();
         }
     }
