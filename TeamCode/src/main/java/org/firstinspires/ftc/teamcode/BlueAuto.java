@@ -4,12 +4,20 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 
 @Autonomous(name = "Blue Auto Left", group = "Auto")
+@Config
 public class BlueAuto extends LinearOpMode {
 
     private DcMotor leftFront;
     private DcMotor rightFront;
+    private DcMotor leftRear;
+    private DcMotor rightRear;
     private DcMotor shooterMotor;
 
     private CRServo clockwiseServo;
@@ -28,6 +36,8 @@ public class BlueAuto extends LinearOpMode {
 
         leftFront = hardwareMap.get(DcMotor.class, "leftFront");
         rightFront = hardwareMap.get(DcMotor.class, "rightFront");
+        leftRear   = hardwareMap.get(DcMotor.class, "leftRear");
+        rightRear  = hardwareMap.get(DcMotor.class, "rightRear");
         shooterMotor = hardwareMap.get(DcMotor.class, "clockwiseMotor");
 
         clockwiseServo = hardwareMap.get(CRServo.class, "clockwiseServo");
@@ -35,13 +45,19 @@ public class BlueAuto extends LinearOpMode {
 
         leftFront.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
+        leftFront.setDirection(DcMotor.Direction.FORWARD);
+        rightFront.setDirection(DcMotor.Direction.REVERSE);
         shooterMotor.setDirection(DcMotor.Direction.REVERSE);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         telemetry.addLine("Blue Auto Backward Left READY");
         telemetry.update();
@@ -54,6 +70,8 @@ public class BlueAuto extends LinearOpMode {
 
         leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // ---- AUTO ----
         driveBackward(60, 0.6);
@@ -68,17 +86,25 @@ public class BlueAuto extends LinearOpMode {
     }
 
     private void driveBackward(double inches, double power) {
-        int leftTarget = leftFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
-        int rightTarget = rightFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int leftFrontTarget = leftFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int rightFrontTarget = rightFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int leftRearTarget = leftRear.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int rightRearTarget = rightRear.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
 
-        leftFront.setTargetPosition(leftTarget);
-        rightFront.setTargetPosition(rightTarget);
+        leftFront.setTargetPosition(leftFrontTarget);
+        rightFront.setTargetPosition(rightFrontTarget);
+        leftRear.setTargetPosition(leftRearTarget);
+        rightRear.setTargetPosition(rightRearTarget);
 
         leftFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftRear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightRear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         leftFront.setPower(power);
         rightFront.setPower(power);
+        leftRear.setPower(power);
+        rightRear.setPower(power);
 
         while (opModeIsActive() && leftFront.isBusy() && rightFront.isBusy()) {
             telemetry.addData("Reversing", "%.1f in", inches);
@@ -87,25 +113,37 @@ public class BlueAuto extends LinearOpMode {
 
         leftFront.setPower(0);
         rightFront.setPower(0);
+        leftRear.setPower(0);
+        rightRear.setPower(0);
         leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     private void turnLeft(double degrees, double power) {
         double INCHES_PER_DEGREE = 0.10;
         double inches = degrees * INCHES_PER_DEGREE;
 
-        int leftTarget = leftFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
-        int rightTarget = rightFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+        int leftFrontTarget = leftFront.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
+        int rightFrontTarget = rightFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+        int leftRearTarget = leftRear.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
+        int rightRearTarget = rightRear.getCurrentPosition() - (int)(inches * COUNTS_PER_INCH);
 
-        leftFront.setTargetPosition(leftTarget);
-        rightFront.setTargetPosition(rightTarget);
+        leftFront.setTargetPosition(leftFrontTarget);
+        rightFront.setTargetPosition(rightFrontTarget);
+        leftRear.setTargetPosition(leftRearTarget);
+        rightRear.setTargetPosition(rightRearTarget);
 
         leftFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftRear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightRear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         leftFront.setPower(power);
         rightFront.setPower(power);
+        leftRear.setPower(power);
+        rightRear.setPower(power);
 
         while (opModeIsActive() && leftFront.isBusy()) {
             telemetry.addData("Turning LEFT", "%.1f°", degrees);
@@ -114,8 +152,12 @@ public class BlueAuto extends LinearOpMode {
 
         leftFront.setPower(0);
         rightFront.setPower(0);
+        leftRear.setPower(0);
+        rightRear.setPower(0);
         leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     private void shootThreeTimes() {
