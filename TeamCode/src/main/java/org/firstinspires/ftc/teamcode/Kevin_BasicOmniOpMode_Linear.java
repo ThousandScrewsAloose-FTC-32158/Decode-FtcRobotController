@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -70,7 +71,7 @@ import java.util.Locale;
  */
 
 @TeleOp(name="Basic: Kevin Omni Linear OpMode", group="Linear OpMode")
-// @Disabled
+@Disabled
 @Config //Enables FTC Dashboard configuration variables.
 public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
 

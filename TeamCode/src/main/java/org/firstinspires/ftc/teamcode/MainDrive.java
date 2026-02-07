@@ -30,7 +30,7 @@ public class MainDrive extends LinearOpMode {
     private CRServo counterClockwiseServo;
 
     // Max drive speed
-    public static final double MAX_SPEED = 0.7;
+    public static double MAX_SPEED = 1;
 
     // ============================
     // Flywheel Toggle
@@ -46,9 +46,9 @@ public class MainDrive extends LinearOpMode {
     double stateStartTime = 0;
 
     public static double FIRE_TIME = 0.25;
-    public static double COOLDOWN = 2.2;
+    public static double COOLDOWN = 2.5;
 
-    public static double FLYWHEEL_TICKS_PER_SECOND = 1050;
+    public static double FLYWHEEL_TICKS_PER_SECOND = 700;
 
     @Override
     public void runOpMode() {
@@ -110,10 +110,8 @@ public class MainDrive extends LinearOpMode {
             if (Math.abs(x) < 0.05) x = 0;
             if (Math.abs(rx) < 0.05) rx = 0;
 
+            //slow mode
             double speedScale = gamepad1.left_bumper ? 0.40 : 1.0;
-            y  *= speedScale;
-            x  *= speedScale;
-            rx *= speedScale;
 
             double lf = y + x + rx;
             double rf = y - x - rx;
@@ -132,10 +130,10 @@ public class MainDrive extends LinearOpMode {
                 rr /= max;
             }
 
-            leftFront.setPower(lf * MAX_SPEED);
-            rightFront.setPower(rf * MAX_SPEED);
-            leftRear.setPower(lr * MAX_SPEED);
-            rightRear.setPower(rr * MAX_SPEED);
+            leftFront.setPower(lf * MAX_SPEED * speedScale);
+            rightFront.setPower(rf * MAX_SPEED * speedScale);
+            leftRear.setPower(lr * MAX_SPEED * speedScale);
+            rightRear.setPower(rr * MAX_SPEED * speedScale);
 
             // ============================
             // FLYWHEEL TOGGLE (RIGHT TRIGGER)
