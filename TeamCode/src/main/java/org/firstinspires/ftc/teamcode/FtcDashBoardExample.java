@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 import org.firstinspires.ftc.robotcore.external.function.Consumer;
 import org.firstinspires.ftc.robotcore.external.function.Continuation;
@@ -42,7 +43,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
  */
 
 @TeleOp(name = "Dashboard: FTC Dashboard Example", group = "Dashboard")
-//@Disabled
+@Disabled
 @Config //Enables FTC Dashboard configuration variables.
 public class FtcDashBoardExample extends LinearOpMode
 {

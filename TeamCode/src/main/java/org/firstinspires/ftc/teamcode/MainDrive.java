@@ -4,112 +4,140 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+// Activate the FTC Dashboard by browsing to http://192.168.43.1:8080/dash
 @TeleOp(name = "Main Drive", group = "Drive")
+@Config
 public class MainDrive extends LinearOpMode {
 
+    // ============================
+    // Drive Motors
+    // ============================
     private DcMotor leftFront;
     private DcMotor rightFront;
-    private DcMotor clockwiseMotor;
+    private DcMotor leftRear;
+    private DcMotor rightRear;
+
+    // ============================
+    // Launcher / Shooter
+    // ============================
+    private DcMotorEx clockwiseMotor;
     private CRServo clockwiseServo;
     private CRServo counterClockwiseServo;
 
-    // Max driving speed
-    private static final double MAX_SPEED = 0.7;
+    // Max drive speed
+    public static double MAX_SPEED = 1;
 
-    // Manual motor correction
-    private static final double LEFT_CORRECTION = 1.0;
-    private static final double RIGHT_CORRECTION = 0.97;
-
-    // Launcher motor toggle state
+    // ============================
+    // Flywheel Toggle
+    // ============================
     private boolean launcherOn = false;
     private boolean triggerPreviouslyPressed = false;
 
-    // Encoder constants
-    private static final double COUNTS_PER_MOTOR_REV = 537.7;
-    private static final double WHEEL_DIAMETER_INCHES = 4.0;
-    private static final double COUNTS_PER_INCH =
-            (COUNTS_PER_MOTOR_REV) / (WHEEL_DIAMETER_INCHES * Math.PI);
-
     // ============================
-    // Servo Shot Timing Variables
+    // Shooter FSM
     // ============================
-
     enum ShootState { IDLE, FIRING, COOLDOWN }
     ShootState shootState = ShootState.IDLE;
     double stateStartTime = 0;
 
-    final double FIRE_TIME = 0.25;      // Servo spin duration
-    final double COOLDOWN = 2.2;        // Lockout between shots
+    public static double FIRE_TIME = 0.25;
+    public static double COOLDOWN = 2.5;
 
+    public static double FLYWHEEL_TICKS_PER_SECOND = 700;
 
     @Override
     public void runOpMode() {
 
-        // Map hardware
-        leftFront = hardwareMap.get(DcMotor.class, "leftFront");
+        // ============================
+        // Hardware Mapping
+        // ============================
+        leftFront  = hardwareMap.get(DcMotor.class, "leftFront");
         rightFront = hardwareMap.get(DcMotor.class, "rightFront");
-        clockwiseMotor = hardwareMap.get(DcMotor.class, "clockwiseMotor");
+        leftRear   = hardwareMap.get(DcMotor.class, "leftRear");
+        rightRear  = hardwareMap.get(DcMotor.class, "rightRear");
+
+        clockwiseMotor = hardwareMap.get(DcMotorEx.class, "clockwiseMotor");
         clockwiseServo = hardwareMap.get(CRServo.class, "clockwiseServo");
         counterClockwiseServo = hardwareMap.get(CRServo.class, "counterClockwiseServo");
 
-        // Motor directions
+        // ============================
+        // Motor Directions
+        // ============================
         leftFront.setDirection(DcMotor.Direction.FORWARD);
+        leftRear.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.REVERSE);
+        rightRear.setDirection(DcMotor.Direction.REVERSE);
+
         clockwiseMotor.setDirection(DcMotor.Direction.REVERSE);
 
+        // ============================
         // Behaviors
+        // ============================
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        clockwiseMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Encoder modes
-        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        clockwiseMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        clockwiseMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        clockwiseMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        clockwiseMotor.setVelocityPIDFCoefficients(5, 0, 1, 15);
+
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
         waitForStart();
 
-        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
+        // ============================
+        // Main Loop
+        // ============================
         while (opModeIsActive()) {
 
-            // --- Joystick input ---
-            double forward = gamepad1.left_stick_y;
-            double turn = gamepad1.right_stick_x;
+            // ============================
+            // MECANUM DRIVE
+            // ============================
+            double y  = gamepad1.left_stick_y;
+            double x  = -gamepad1.left_stick_x;
+            double rx = -gamepad1.right_stick_x;
 
-            // Deadzones
-            if (Math.abs(forward) < 0.05) forward = 0;
-            if (Math.abs(turn) < 0.05) turn = 0;
+            if (Math.abs(y) < 0.05) y = 0;
+            if (Math.abs(x) < 0.05) x = 0;
+            if (Math.abs(rx) < 0.05) rx = 0;
 
-            // --- Slow mode (L1 = 40%) ---
-            double speedScale = (gamepad1.left_bumper) ? 0.40 : 1.0;
-            forward *= speedScale;
-            turn *= speedScale;
+            //slow mode
+            double speedScale = gamepad1.left_bumper ? 0.40 : 1.0;
 
-            // --- Drive power ---
-            double leftPower = (forward + turn) * MAX_SPEED * LEFT_CORRECTION;
-            double rightPower = (forward - turn) * MAX_SPEED * RIGHT_CORRECTION;
+            double lf = y + x + rx;
+            double rf = y - x - rx;
+            double lr = y - x + rx;
+            double rr = y + x - rx;
 
-            double max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
+            double max = Math.max(
+                    Math.max(Math.abs(lf), Math.abs(rf)),
+                    Math.max(Math.abs(lr), Math.abs(rr))
+            );
+
             if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
+                lf /= max;
+                rf /= max;
+                lr /= max;
+                rr /= max;
             }
 
-            leftFront.setPower(leftPower);
-            rightFront.setPower(rightPower);
+            leftFront.setPower(lf * MAX_SPEED * speedScale);
+            rightFront.setPower(rf * MAX_SPEED * speedScale);
+            leftRear.setPower(lr * MAX_SPEED * speedScale);
+            rightRear.setPower(rr * MAX_SPEED * speedScale);
 
             // ============================
-            // LAUNCHER MOTOR CONTROL
+            // FLYWHEEL TOGGLE (RIGHT TRIGGER)
             // ============================
-
             boolean triggerPressed = gamepad1.right_trigger > 0.1;
 
             if (triggerPressed && !triggerPreviouslyPressed) {
@@ -122,13 +150,12 @@ public class MainDrive extends LinearOpMode {
             if (reversePressed) {
                 clockwiseMotor.setPower(-0.2);
             } else {
-                clockwiseMotor.setPower(launcherOn ? .65: 0.0);
+                clockwiseMotor.setVelocity(launcherOn ? FLYWHEEL_TICKS_PER_SECOND : 0);
             }
 
             // ============================
-            //      SERVO AUTO SHOT
+            // SERVO AUTO SHOOT
             // ============================
-
             boolean shootPressed = gamepad1.left_trigger > 0.1;
 
             switch (shootState) {
@@ -149,7 +176,6 @@ public class MainDrive extends LinearOpMode {
                     if (getRuntime() - stateStartTime >= FIRE_TIME) {
                         clockwiseServo.setPower(0);
                         counterClockwiseServo.setPower(0);
-
                         shootState = ShootState.COOLDOWN;
                         stateStartTime = getRuntime();
                     }
@@ -162,49 +188,15 @@ public class MainDrive extends LinearOpMode {
                     break;
             }
 
-            // -----------------------
-            // Telemetry
-            // -----------------------
-
-            telemetry.addData("Left Power", "%.2f", leftPower);
-            telemetry.addData("Right Power", "%.2f", rightPower);
-
-            if (reversePressed) {
-                telemetry.addData("Launcher", "REVERSING (-0.2)");
-            } else {
-                telemetry.addData("Launcher", launcherOn ? "CLOCKWISE (0.6)" : "OFF");
-            }
-
-            telemetry.addData("Slow Mode", speedScale == 0.4 ? "ON" : "OFF");
-            telemetry.addData("Shooter State", shootState.toString());
-
+            // ============================
+            // TELEMETRY
+            // ============================
+            telemetry.addData("Launcher", reversePressed ? "REVERSING" : (launcherOn ? "ON" : "OFF"));
+            telemetry.addData("Shooter State", shootState);
+            telemetry.addData("Target FW TPS", FLYWHEEL_TICKS_PER_SECOND);
+            telemetry.addData("Actual FW TPS",
+                    (512.0 / 1200.0) * clockwiseMotor.getVelocity());
             telemetry.update();
         }
-    }
-
-    // Helper auto move
-    private void moveForwardInches(double inches, double power) {
-        int newLeftTarget = leftFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
-        int newRightTarget = rightFront.getCurrentPosition() + (int)(inches * COUNTS_PER_INCH);
-
-        leftFront.setTargetPosition(newLeftTarget);
-        rightFront.setTargetPosition(newRightTarget);
-        leftFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightFront.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        leftFront.setPower(power);
-        rightFront.setPower(power);
-
-        while (opModeIsActive() && (leftFront.isBusy() && rightFront.isBusy())) {
-            telemetry.addData("Moving Forward", "%.1f inches", inches);
-            telemetry.addData("Left Pos", leftFront.getCurrentPosition());
-            telemetry.addData("Right Pos", rightFront.getCurrentPosition());
-            telemetry.update();
-        }
-
-        leftFront.setPower(0);
-        rightFront.setPower(0);
-        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 }
