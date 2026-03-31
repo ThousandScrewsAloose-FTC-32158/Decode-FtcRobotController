@@ -77,7 +77,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 //@Disabled
 @Config //Enables FTC Dashboard configuration variables.  http://192.168.43.1:8080/dash
 
-public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
+public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
 
     class MotorPower {
         public double LeftFront;
@@ -135,8 +135,15 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
+        long startTime = System.nanoTime();
+
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+            long curTime = System.nanoTime();
+            long elapsed = curTime - startTime;
+            startTime = curTime;
+            telemetry.addData("Loop ms: ", elapsed / 1000000.0);
+
             MotorPower mp;
             if (gamepad1.dpad_down) {
                 double curentYaw = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
@@ -176,7 +183,6 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
             telemetry.addData("Y coordinate (IN)", Math.round(pose2D.getY(DistanceUnit.INCH) * 100) / 100.0);
             telemetry.addData("Heading angle (DEGREES)", Math.round(pose2D.getHeading(AngleUnit.DEGREES) * 100) / 100.0);
 
-
             // Send calculated power to wheels
             frontLeftDrive.setPower(mp.LeftFront);
             frontRightDrive.setPower(mp.RightFront);
@@ -185,8 +191,6 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Front left/Right", "%4.2f, %4.2f", mp.LeftFront, mp.RightFront);
-            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", mp.LeftBack, mp.RightBack);
             telemetry.update();
         }
     }
@@ -201,7 +205,7 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
          *  The Y pod offset refers to how far forwards from the tracking point the Y (strafe) odometry pod is.
          *  Forward of center is a positive number, backwards is a negative number.
          */
-        pinpoint.setOffsets(0, 35, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
+        pinpoint.setOffsets(35, 35, DistanceUnit.MM); //these are tuned for 3110-0002-0001 Product Insight #1
 
         /*
          * Set the kind of pods used by your robot. If you're using goBILDA odometry pods, select either
@@ -217,7 +221,7 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
          * increase when you move the robot forward. And the Y (strafe) pod should increase when
          * you move the robot to the left.
          */
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED,
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD,
                 GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
         /*
@@ -256,7 +260,6 @@ public class KevinBasicOmniOpMode_Linear extends LinearOpMode {
         mp.LeftFront = frontLeftPower;
         mp.RightFront = frontRightPower;
         return mp;
-
     }
 }
 
