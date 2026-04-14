@@ -40,6 +40,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -79,6 +80,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 
 public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
 
+    public static double YAW_EPSILON = 2.0; //Degrees
+
     class MotorPower {
         public double LeftFront;
         public double RightFront;
@@ -93,6 +96,41 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
     private DcMotor frontRightDrive = null;
     private DcMotor backRightDrive = null;
     private GoBildaPinpointDriver pinpoint;
+
+    static class PerfTimer
+    {
+        public void Start() { m_StartTime = System.nanoTime(); }
+
+        public void Stop() { m_EndTime = System.nanoTime();}
+
+        public double MinMs() { return m_MinMs; }
+
+        public double MaxMs() { return m_MaxMs; }
+
+        public double ElapsedMs()
+        {
+            double elapsed = (m_EndTime - m_StartTime) / 1000000.0;
+            if(elapsed > m_MaxMs)
+            {
+                m_MaxMs = elapsed;
+            }
+
+            if(elapsed < m_MinMs)
+            {
+                m_MinMs = elapsed;
+            }
+            return Math.round(elapsed * 1000.0) / 1000.0;
+        }
+
+        private long m_StartTime;
+        private long m_EndTime;
+
+        private double m_MinMs = Double.MAX_VALUE;
+        private double m_MaxMs = Double.MIN_VALUE;
+    }
+
+    private PerfTimer m_LoopTimer = new PerfTimer();
+    private PerfTimer m_ControlTimer = new PerfTimer();
 
     @Override
     public void runOpMode() {
@@ -126,7 +164,7 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        //telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
@@ -135,39 +173,53 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        long startTime = System.nanoTime();
+        Telemetry.Item telDeltaYaw = telemetry.addData("detlaYaw", 0.0);
+        Telemetry.Item telCurrentYaw = telemetry.addData("currentYaw", 0.0);
+        Telemetry.Item telLateral = telemetry.addData("lateral", 0.0);
+        Telemetry.Item telAxial = telemetry.addData("axial", 0.0);
+        Telemetry.Item telYaw = telemetry.addData("yaw", 0.0);
+        Telemetry.Item telPinpointX = telemetry.addData("X coordinate (IN)", 0.0);
+        Telemetry.Item telPinpointY = telemetry.addData("Y coordinate (IN)", 0.0);
+        Telemetry.Item telPinpointAngle = telemetry.addData("Heading angle (DEGREES)", 0.0);
+        Telemetry.Item telRuntime = telemetry.addData("Status", "Run Time: ", 0);
+        Telemetry.Item telLoopTimer = telemetry.addData("Loop ms: ", 0.0);
+        Telemetry.Item telControlTimer = telemetry.addData("Control ms: ", 0.0);
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            long curTime = System.nanoTime();
-            long elapsed = curTime - startTime;
-            startTime = curTime;
-            telemetry.addData("Loop ms: ", elapsed / 1000000.0);
+            m_LoopTimer.Start();
+
+            double currentYaw = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
+            //while(currentYaw > 360) currentYaw -= 360;
+            //while(currentYaw < -360) currentYaw += 360;
+            pinpoint.setHeading(currentYaw, AngleUnit.DEGREES);
+            telCurrentYaw.setValue(currentYaw);
 
             MotorPower mp;
             if (gamepad1.dpad_down) {
-                double curentYaw = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
 
                 double deltaYaw = 0;
-                if (curentYaw > 0)
+                if (currentYaw > YAW_EPSILON)
                 {
                     deltaYaw = 100/360.0;
-                } else if (curentYaw < 0) {
+                } else if (currentYaw < -YAW_EPSILON) {
                     deltaYaw = - 100/360.0;
                 }
-                telemetry.addData("deltaYaw: ", deltaYaw);
-                telemetry.addData("currentYaw: ", curentYaw);
+
+                telDeltaYaw.setValue(deltaYaw);
                 mp = ComputeMotorPower(0, 0, deltaYaw);
             }
             else {
+                m_ControlTimer.Start();
                 // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
                 double axial = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
                 double lateral = gamepad1.left_stick_x;
                 double yaw = gamepad1.right_stick_x;
-                telemetry.addData("lateral: ", lateral);
-                telemetry.addData("axial: ", axial);
-                telemetry.addData("yaw: ", yaw);
+                telLateral.setValue(lateral);
+                telAxial.setValue(axial);
+                telYaw.setValue(yaw);
                 mp = ComputeMotorPower(axial, lateral, yaw);
+                m_ControlTimer.Stop();
             }
 
             //Pinpooint code
@@ -175,13 +227,12 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
                 // You could use readings from April Tags here to give a new known position to the pinpoint
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
             }
-            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
             pinpoint.update();
             Pose2D pose2D = pinpoint.getPosition();
 
-            telemetry.addData("X coordinate (IN)", Math.round(pose2D.getX(DistanceUnit.INCH) * 100) / 100.0);
-            telemetry.addData("Y coordinate (IN)", Math.round(pose2D.getY(DistanceUnit.INCH) * 100) / 100.0);
-            telemetry.addData("Heading angle (DEGREES)", Math.round(pose2D.getHeading(AngleUnit.DEGREES) * 100) / 100.0);
+            telPinpointX.setValue(Math.round(pose2D.getX(DistanceUnit.INCH) * 100) / 100.0);
+            telPinpointY.setValue(Math.round(pose2D.getY(DistanceUnit.INCH) * 100) / 100.0);
+            telPinpointAngle.setValue(Math.round(pose2D.getHeading(AngleUnit.DEGREES) * 100) / 100.0);
 
             // Send calculated power to wheels
             frontLeftDrive.setPower(mp.LeftFront);
@@ -190,7 +241,12 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
             backRightDrive.setPower(mp.RightBack);
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telRuntime.setValue(runtime);
+
+            m_LoopTimer.Stop();
+            telLoopTimer.setValue(m_LoopTimer.ElapsedMs());
+            telControlTimer.setValue(m_ControlTimer.ElapsedMs());
+
             telemetry.update();
         }
     }
