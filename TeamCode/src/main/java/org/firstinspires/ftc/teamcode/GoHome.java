@@ -1,88 +1,29 @@
-/* Copyright (c) 2021 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 
-/*
- * This file contains an example of a Linear "OpMode".
- * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
- * The names of OpModes appear on the menu of the FTC Driver Station.
- * When a selection is made from the menu, the corresponding OpMode is executed.
- *
- * This particular OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
- * This code will work with either a Mecanum-Drive or an X-Drive train.
- * Both of these drives are illustrated at https://gm0.org/en/latest/docs/robot-design/drivetrains/holonomic.html
- * Note that a Mecanum drive must display an X roller-pattern when viewed from above.
- *
- * Also note that it is critical to set the correct rotation direction for each motor.  See details below.
- *
- * Holonomic drives provide the ability for the robot to move in three axes (directions) simultaneously.
- * Each motion axis is controlled by one Joystick axis.
- *
- * 1) Axial:    Driving forward and backward               Left-joystick Forward/Backward
- * 2) Lateral:  Strafing right and left                     Left-joystick Right and Left
- * 3) Yaw:      Rotating Clockwise and counter clockwise    Right-joystick Right and Left
- *
- * This code is written assuming that the right-side motors need to be reversed for the robot to drive forward.
- * When you first test your robot, if it moves backward when you push the left stick forward, then you must flip
- * the direction of all 4 motors (see code below).
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
- */
-
-@TeleOp(name="Pinpoint Drive", group="A_Teleop")
+@TeleOp(name="Go Home", group="A_Teleop")
 //@Disabled
 @Config //Enables FTC Dashboard configuration variables.  http://192.168.43.1:8080/dash
 
-public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
+public class GoHome extends LinearOpMode {
 
     public static double YAW_EPSILON = 2.0; //Degrees
+    public static double XY_EPSILON = 0.5;  //CM
 
-    class MotorPower {
+    static class MotorPower {
         public double LeftFront;
         public double RightFront;
         public double LeftBack;
@@ -90,7 +31,7 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
     }
 
     // Declare OpMode members for each of the 4 motors.
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private DcMotor frontLeftDrive = null;
     private DcMotor backLeftDrive = null;
     private DcMotor frontRightDrive = null;
@@ -129,14 +70,12 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         private double m_MaxMs = Double.MIN_VALUE;
     }
 
-    private PerfTimer m_LoopTimer = new PerfTimer();
-    private PerfTimer m_ControlTimer = new PerfTimer();
+    private final PerfTimer m_LoopTimer = new PerfTimer();
+    private final PerfTimer m_ControlTimer = new PerfTimer();
 
     @Override
     public void runOpMode() {
 
-        // Initialize the hardware variables. Note that the strings used here must correspond
-        // to the names assigned during the robot configuration step on the DS or RC devices.
         frontLeftDrive = hardwareMap.get(DcMotor.class, "leftFront");
         backLeftDrive = hardwareMap.get(DcMotor.class, "leftRear");
         frontRightDrive = hardwareMap.get(DcMotor.class, "rightFront");
@@ -149,16 +88,6 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         // Set the location of the robot - this should be the place you are starting the robot from
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
 
-        // ########################################################################################
-        // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
-        // ########################################################################################
-        // Most robots need the motors on one side to be reversed to drive forward.
-        // The motor reversals shown here are for a "direct drive" robot (the wheels turn the same direction as the motor shaft)
-        // If your robot has additional gear reductions or uses a right-angled drive, it's important to ensure
-        // that your motors are turning in the correct direction.  So, start out with the reversals here, BUT
-        // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
-        // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
-        // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
         frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         backLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
@@ -173,8 +102,13 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        Telemetry.Item telDeltaYaw = telemetry.addData("detlaYaw", 0.0);
+        Telemetry.Item telYawPower = telemetry.addData("yawPower", 0.0);
+        Telemetry.Item telXPower = telemetry.addData("xPower", 0.0);
+        Telemetry.Item telYPower = telemetry.addData("yPower", 0.0);
+        Telemetry.Item telXYScale = telemetry.addData("xyScale", 0.0);
         Telemetry.Item telCurrentYaw = telemetry.addData("currentYaw", 0.0);
+        Telemetry.Item telCurrentX = telemetry.addData("currentX", 0.0);
+        Telemetry.Item telCurrentY = telemetry.addData("currentY", 0.0);
         Telemetry.Item telLateral = telemetry.addData("lateral", 0.0);
         Telemetry.Item telAxial = telemetry.addData("axial", 0.0);
         Telemetry.Item telYaw = telemetry.addData("yaw", 0.0);
@@ -189,25 +123,66 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
         while (opModeIsActive()) {
             m_LoopTimer.Start();
 
-            double currentYaw = pinpoint.getHeading(UnnormalizedAngleUnit.DEGREES);
-            //while(currentYaw > 360) currentYaw -= 360;
-            //while(currentYaw < -360) currentYaw += 360;
-            pinpoint.setHeading(currentYaw, AngleUnit.DEGREES);
+            Pose2D pose2D = pinpoint.getPosition();
+
+            double currentYaw = pose2D.getHeading(AngleUnit.DEGREES);
+            double currentX = pose2D.getX(DistanceUnit.CM);
+            double currentY = pose2D.getY(DistanceUnit.CM);
+
             telCurrentYaw.setValue(currentYaw);
+            telCurrentX.setValue(currentX);
+            telCurrentY.setValue(currentY);
 
             MotorPower mp;
-            if (gamepad1.dpad_down) {
+            if (gamepad1.dpad_down)
+            {
+                double yawPower = 0;
+                double xPower = 0;
+                double yPower = 0;
 
-                double deltaYaw = 0;
+                double MAX_DIST = 50.0; //CM
+                double MAX_SCALE = 1.0;
+                double MIN_SCALE = 0.05;
+
+                double distFromHome = Math.sqrt((currentX * currentX) + (currentY * currentY));
+
+                double xyScale = distFromHome / MAX_DIST;
+                xyScale = Math.min(MAX_SCALE, xyScale);
+                xyScale = Math.max(MIN_SCALE, xyScale);
+
+                telXYScale.setValue(xyScale);
+
                 if (currentYaw > YAW_EPSILON)
                 {
-                    deltaYaw = 100/360.0;
-                } else if (currentYaw < -YAW_EPSILON) {
-                    deltaYaw = - 100/360.0;
+                    yawPower = 0.3;
+                }
+                else if (currentYaw < -YAW_EPSILON)
+                {
+                    yawPower = -0.3;
                 }
 
-                telDeltaYaw.setValue(deltaYaw);
-                mp = ComputeMotorPower(0, 0, deltaYaw);
+                if(currentX > XY_EPSILON)
+                {
+                    xPower = -0.3 * xyScale;
+                }
+                else if(currentX < XY_EPSILON)
+                {
+                    xPower = 0.3 * xyScale;
+                }
+
+                if(currentY > XY_EPSILON)
+                {
+                    yPower = -0.3 * xyScale;
+                }
+                else if(currentY < XY_EPSILON)
+                {
+                    yPower = 0.3 * xyScale;
+                }
+
+                telYawPower.setValue(yawPower);
+                telXPower.setValue(xPower);
+                telYPower.setValue(yPower);
+                mp = ComputeMotorPower(xPower, yPower, 0);//yawPower);
             }
             else {
                 m_ControlTimer.Start();
@@ -222,17 +197,17 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
                 m_ControlTimer.Stop();
             }
 
-            //Pinpooint code
+            //Pinpoint code
             if (gamepad1.dpad_up) {
                 // You could use readings from April Tags here to give a new known position to the pinpoint
                 pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
             }
             pinpoint.update();
-            Pose2D pose2D = pinpoint.getPosition();
 
             telPinpointX.setValue(Math.round(pose2D.getX(DistanceUnit.INCH) * 100) / 100.0);
             telPinpointY.setValue(Math.round(pose2D.getY(DistanceUnit.INCH) * 100) / 100.0);
-            telPinpointAngle.setValue(Math.round(pose2D.getHeading(AngleUnit.DEGREES) * 100) / 100.0);
+            //telPinpointAngle.setValue(Math.round(pose2D.getHeading(AngleUnit.DEGREES) * 100) / 100.0);
+            telPinpointAngle.setValue(pose2D.getHeading(AngleUnit.DEGREES));
 
             // Send calculated power to wheels
             frontLeftDrive.setPower(mp.LeftFront);
@@ -278,7 +253,7 @@ public class Kevin_BasicOmniOpMode_Linear extends LinearOpMode {
          * you move the robot to the left.
          */
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED);
+                GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
         /*
          * Before running the robot, recalibrate the IMU. This needs to happen when the robot is stationary
